@@ -122,6 +122,24 @@ DB_CONFIG = {
     "password": "Periodicals24!"
 }
 
+
+# SQL to ensure the table exists before we try to insert
+CREATE_TABLE_SQL = """
+CREATE TABLE IF NOT EXISTS opportunities (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    status VARCHAR(50),
+    source VARCHAR(100),
+    type VARCHAR(100),
+    link TEXT UNIQUE,
+    deadline TIMESTAMP,
+    posted_date TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+"""
+
 # Sample opportunities with all required fields
 opportunities = [
     (1, "Infrastructure Development Consultant - Road Network Expansion",
@@ -144,42 +162,54 @@ opportunities = [
 ]
 
 def seed_opportunities():
-    conn = psycopg2.connect(**DB_CONFIG)
-    cur = conn.cursor()
+    conn = None
+    cur = None
+    try:
+        conn = psycopg2.connect(**DB_CONFIG)
+        cur = conn.cursor()
 
-    for opp in opportunities:
-        opportunity_id, title, description, status, days_ago, source, type_, link = opp
-        created_at = datetime.now() - timedelta(days=days_ago)
-        updated_at = created_at
-        posted_date = created_at  # can adjust separately if needed
-        deadline = datetime.now() + timedelta(days=(days_ago % 15) + 2)  # sample deadlines
+        # 1. Create the table first
+        print("🔧 Ensuring table 'opportunities' exists...")
+        cur.execute(CREATE_TABLE_SQL)
 
-        cur.execute(
-            """
-            INSERT INTO opportunities 
-            (opportunity_id, title, description, status, created_at, updated_at, posted_date, deadline, source, type, link)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            ON CONFLICT (opportunity_id) DO NOTHING
-            """,
-            (
-                opportunity_id,
-                title,
-                description,
-                status,
-                created_at,
-                updated_at,
-                posted_date,
-                deadline,
-                source,
-                type_,
-                link
+        for opp in opportunities:
+            id, title, description, status, days_ago, source, type_, link = opp
+            created_at = datetime.now() - timedelta(days=days_ago)
+            updated_at = created_at
+            posted_date = created_at  # can adjust separately if needed
+            deadline = datetime.now() + timedelta(days=(days_ago % 15) + 2)  # sample deadlines
+
+            cur.execute(
+                """
+                INSERT INTO opportunities
+                (id, title, description, status, created_at, updated_at, posted_date, deadline, source, type, link)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (id) DO NOTHING
+                """,
+                (
+                    id,
+                    title,
+                    description,
+                    status,
+                    created_at,
+                    updated_at,
+                    posted_date,
+                    deadline,
+                    source,
+                    type_,
+                    link
+                )
             )
-        )
 
-    conn.commit()
-    cur.close()
-    conn.close()
-    print("✅ Sample opportunities inserted successfully")
+        conn.commit()
+        print("✅ Sample opportunities inserted successfully")
 
+    except Exception as e:
+        print(f"❌ Error: {e}")
+    finally:
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
 if __name__ == "__main__":
     seed_opportunities()

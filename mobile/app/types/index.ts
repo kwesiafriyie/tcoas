@@ -1,22 +1,38 @@
 // src/types/index.ts
 
-export type OpportunityType = 'EOI' | 'RFP' | 'RFQ' | 'Tender';
+export type OpportunityType = 'EOI' | 'RFP' | 'RFQ' | 'Tender'|string;
 
-export type OpportunityStatus = 'Active' |'Urgent'|'Expired'| 'ClosingToday';
+export type OpportunityStatus = 'Active' |'Urgent'|'Expired'| 'ClosingToday'|string;
 
-export type SourceType = 'PPA' | 'AfDB' | 'WorldBank' | 'Other';
+export type SourceType = 'PPA' | 'AfDB' | 'WorldBank' | 'Other'|string;
+
+// export interface Opportunity {
+//   id: number;
+//   title: string;
+//   description: string;
+//   deadline: string; // ISO date string
+//   posted_date: string; // ISO date string
+//   source: SourceType;
+//   type: OpportunityType;
+//   status: OpportunityStatus;
+//   link: string;
+//   created_at: string;
+// }
+
+// mobile/app/types/index.ts
 
 export interface Opportunity {
   id: number;
   title: string;
   description: string;
-  deadline: string; // ISO date string
-  posted_date: string; // ISO date string
-  source: SourceType;
-  type: OpportunityType;
-  status: OpportunityStatus;
-  link: string;
+  status: string;
+  deadline: string;    // Matches "2026-01-10T15:04:01..."
+  posted_date: string; // Matches "2025-12-29T15:04:01..."
+  source: string;      
+  type: string;
+  link: string;        
   created_at: string;
+  updated_at: string;
 }
 
 export interface JobsQueryParams {
