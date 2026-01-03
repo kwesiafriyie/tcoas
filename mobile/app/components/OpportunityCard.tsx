@@ -5,6 +5,7 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Opportunity } from '../types';
 import { COLORS } from '../utils/constants';
 import { DeadlineBadge, SourceChip, StatusBadge } from './Badges';
+import { calculateStatus } from '../utils/statusHelpers';
 
 interface OpportunityCardProps {
   opportunity: Opportunity;
@@ -15,10 +16,15 @@ export const OpportunityCard: React.FC<OpportunityCardProps> = ({
   opportunity,
   onPress,
 }) => {
+
+  // IGNORE opportunity.status from the DB (which is hardcoded/static)
+  // CALCULATE it on the fly based on the actual deadline date
+  const dynamicStatus = calculateStatus(opportunity.deadline);
+
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
       <View style={styles.header}>
-        <StatusBadge status={opportunity.status} />
+        <StatusBadge status={dynamicStatus} />
         <SourceChip source={opportunity.source} />
       </View>
 

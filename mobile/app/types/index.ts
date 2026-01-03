@@ -50,9 +50,12 @@ export interface JobsQueryParams {
 export interface PaginatedResponse<T> {
   items: T[];
   total: number;
-  limit: number;
-  offset: number;
-  has_more: boolean;
+  page: number;      // Add this
+  size: number;      // Add this
+  pages: number;     // Add this
+  limit?: number;    // Optional
+  offset?: number;   // Optional
+  has_more?: boolean; // Optional
 }
 
 export interface SavedOpportunity {

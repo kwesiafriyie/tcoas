@@ -40,6 +40,26 @@ def get_opportunities(db: Session = Depends(get_db)):
         for o in opportunities
     ]
 
+@router.get("/{opportunity_id}", response_model=OpportunityOut)
+def get_opportunity(opportunity_id: int, db: Session = Depends(get_db)):
+    opportunity = db.query(Opportunity).filter(Opportunity.id == opportunity_id).first()
+    if not opportunity:
+        return None
+
+    return OpportunityOut(
+        id=opportunity.id,
+        title=opportunity.title,
+        description=opportunity.description,
+        status=opportunity.status,
+        deadline=opportunity.deadline,
+        posted_date=opportunity.posted_date,
+        source=opportunity.source,
+        type=opportunity.type,
+        link=opportunity.link,
+        created_at=opportunity.created_at,
+        updated_at=opportunity.updated_at
+    )
+
 
 
 

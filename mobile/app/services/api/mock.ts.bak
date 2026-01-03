@@ -1,0 +1,158 @@
+// // src/services/api/mock.ts
+
+// import { Opportunity, PaginatedResponse } from '../../types';
+
+// const MOCK_OPPORTUNITIES: Opportunity[] = [
+//   {
+//     id: 1,
+//     title: 'Infrastructure Development Consultant - Road Network Expansion',
+//     description: 'Seeking experienced consultants for major road infrastructure project covering 500km of highway development in rural areas.',
+//     deadline: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
+//     posted_date: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+//     source: 'PPA',
+//     type: 'EOI',
+//     updated_at: new Date().toISOString(),
+//     status: 'Urgent',
+//     link: 'https://ppa.gov.gh/opportunity/1',
+//     created_at: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+//   },
+//   {
+//     id: 2,
+//     title: 'Financial Advisory Services for Agriculture Development Bank',
+//     description: 'Request for proposals for comprehensive financial advisory services to support agricultural financing initiatives.',
+//     deadline: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
+//     posted_date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+//     source: 'AfDB',
+//     type: 'RFP',
+//     updated_at: new Date().toISOString(),
+//     status: 'Urgent',
+//     link: 'https://afdb.org/opportunity/2',
+//     created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+//   },
+//   {
+//     id: 3,
+//     title: 'IT Systems Integration - National Health Insurance',
+//     description: 'Large-scale IT integration project for modernizing health insurance claim processing systems nationwide.',
+//     deadline: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(),
+//     posted_date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+//     source: 'PPA',
+//     type: 'Tender',
+//     updated_at  : new Date().toISOString(),
+//     status: 'Active',
+//     link: 'https://ppa.gov.gh/opportunity/3',
+//     created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+//   },
+//   {
+//     id: 4,
+//     title: 'Environmental Impact Assessment - Coastal Development',
+//     description: 'Expert consultants needed for environmental assessment of coastal zone development project.',
+//     deadline: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000).toISOString(),
+//     posted_date: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
+//     source: 'WorldBank',
+//     type: 'EOI',
+//     updated_at: new Date().toISOString(),
+//     status: 'ClosingToday',
+//     link: 'https://worldbank.org/opportunity/4',
+//     created_at: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
+//   },
+//   {
+//     id: 5,
+//     title: 'Water Supply System Upgrade - Northern Region',
+//     description: 'Design and supervision of water supply infrastructure improvements serving 100,000 residents.',
+//     deadline: new Date(Date.now() + 20 * 24 * 60 * 60 * 1000).toISOString(),
+//     posted_date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+//     source: 'PPA',
+//     type: 'RFP',
+//     updated_at: new Date().toISOString(),
+//     status: 'Active',
+//     link: 'https://ppa.gov.gh/opportunity/5',
+//     created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+//   },
+//   {
+//     id: 6,
+//     title: 'Energy Sector Reform - Policy Advisory',
+//     description: 'International consultants for energy sector policy development and regulatory framework design.',
+//     deadline: new Date(Date.now() + 8 * 24 * 60 * 60 * 1000).toISOString(),
+//     posted_date: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(),
+//     source: 'AfDB',
+//     type: 'EOI',
+//     updated_at: new Date().toISOString(),
+//     status: 'Active',
+//     link: 'https://afdb.org/opportunity/6',
+//     created_at: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(),
+//   },
+//   {
+//     id: 7,
+//     title: 'Education Infrastructure - School Construction Program',
+//     description: 'Construction and project management services for 50 primary schools across three regions.',
+//     deadline: new Date(Date.now() + 25 * 24 * 60 * 60 * 1000).toISOString(),
+//     posted_date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+//     source: 'PPA',
+//     type: 'Tender',
+//     updated_at: new Date().toISOString(),
+//     status: 'Active',
+//     link: 'https://ppa.gov.gh/opportunity/7',
+//     created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+//   },
+//   {
+//     id: 8,
+//     title: 'Digital Payment Platform Implementation',
+//     description: 'Technology consultancy for national digital payment infrastructure development.',
+//     deadline: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000).toISOString(),
+//     posted_date: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString(),
+//     source: 'WorldBank',
+//     type: 'RFP',
+//     updated_at: new Date().toISOString(),
+//     status: 'Urgent',
+//     link: 'https://worldbank.org/opportunity/8',
+//     created_at: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString(),
+//   },
+// ];
+
+// export const mockApi = {
+//   async getJobs(params: any): Promise<PaginatedResponse<Opportunity>> {
+//     await new Promise(resolve => setTimeout(resolve, 500));
+
+//     let filtered = [...MOCK_OPPORTUNITIES];
+
+//     if (params.source) {
+//       const sources = params.source.split(',');
+//       filtered = filtered.filter(job => sources.includes(job.source));
+//     }
+
+//     if (params.status) {
+//       const statuses = params.status.split(',');
+//       filtered = filtered.filter(job => statuses.includes(job.status));
+//     }
+
+//     if (params.search) {
+//       const search = params.search.toLowerCase();
+//       filtered = filtered.filter(
+//         job =>
+//           job.title.toLowerCase().includes(search) ||
+//           job.description.toLowerCase().includes(search)
+//       );
+//     }
+
+//     if (params.sort_by === 'deadline_asc') {
+//       filtered.sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime());
+//     }
+
+//     const limit = params.limit || 20;
+//     const offset = params.offset || 0;
+//     const paginated = filtered.slice(offset, offset + limit);
+
+//     return {
+//       items: paginated,
+//       total: filtered.length,
+//       limit,
+//       offset,
+//       has_more: offset + limit < filtered.length,
+//     };
+//   },
+
+//   async getJobById(id: number): Promise<Opportunity | null> {
+//     await new Promise(resolve => setTimeout(resolve, 300));
+//     return MOCK_OPPORTUNITIES.find(job => job.id === id) || null;
+//   },
+// };
