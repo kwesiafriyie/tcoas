@@ -119,8 +119,8 @@ export const API_CONFIG = {
 // };
 
 
-BASE_URL: 'https://tcoas-api.onrender.com/',
-  TIMEOUT: 10500,
+BASE_URL: 'https://tcoas-api.onrender.com',
+  TIMEOUT: 15000,
 };
 
 
