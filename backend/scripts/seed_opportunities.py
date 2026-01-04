@@ -218,17 +218,140 @@
 
 
 
+# import psycopg2
+# from datetime import datetime, timedelta
+
+# # PostgreSQL connection details
+# DB_CONFIG = {
+#     "host": "localhost",
+#     "port": 5434,
+#     "dbname": "tcoas",
+#     "user": "postgres",
+#     "password": "Periodicals24!"
+# }
+
+# CREATE_TABLE_SQL = """
+# CREATE TABLE IF NOT EXISTS opportunities (
+#     id SERIAL PRIMARY KEY,
+#     title VARCHAR(255) NOT NULL,
+#     description TEXT,
+#     status VARCHAR(50),
+#     source VARCHAR(100),
+#     type VARCHAR(100),
+#     link TEXT UNIQUE,
+#     deadline TIMESTAMP,
+#     posted_date TIMESTAMP,
+#     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+#     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+# );
+# """
+
+# # logic_type helps us set the correct deadline math below
+# # (id, title, desc, source, type, link, logic_type)
+# opportunities_to_seed = [
+#     (1, "Infrastructure Development Consultant - Road Network Expansion", 
+#      "Urgent technical assessment required for bridge structural integrity.", 
+#      "PPA", "EOI", "https://ppa.gov.gh/urgent-1", "urgent"),
+    
+#     (2, "National Census Data Analysis for national data processing", 
+#      "Final call for proposals for the national data processing project.", 
+#      "AfDB", "RFP", "https://afdb.org/closing-1", "closing_today"),
+
+#      (3, "Environmental Impact Assessment - Coastal Development", 
+#      "Final call for proposals for the national data processing project.", 
+#      "AfDB", "RFP", "https://afdb.org/closing-1", "closing_today"),
+    
+#     (4, "Digital Literacy Program for Schools", 
+#      "Long-term consultancy for implementing e-learning platforms.", 
+#      "World Bank", "Tender", "https://worldbank.org/active-1", "active"),
+
+#      (5, "Telecom Repair Consultancy Impact Assessment", 
+#      "Urgent technical assessment required for bridge structural integrity.", 
+#      "PPA", "EOI", "https://ppa.gov.gh/urgent-1", "urgent"),
+# ]
+
+# def seed_opportunities():
+#     conn = None
+#     cur = None
+#     try:
+#         conn = psycopg2.connect(**DB_CONFIG)
+#         cur = conn.cursor()
+
+#         print("🔧 Ensuring table 'opportunities' exists...")
+#         cur.execute(CREATE_TABLE_SQL)
+
+#         now = datetime.now()
+
+#         for opp in opportunities_to_seed:
+#             opp_id, title, description, source, type_, link, logic = opp
+            
+#             created_at = now - timedelta(days=2)
+#             posted_date = created_at
+            
+#             # DYNAMIC DEADLINE LOGIC
+#             if logic == "closing_today":
+#                 # Set deadline to today (Jan 3) at 11:59 PM
+#                 deadline = now.replace(hour=23, minute=59, second=59)
+#                 status = "ClosingToday"
+#             elif logic == "urgent":
+#                 # Set deadline to 2 days from now (Jan 5)
+#                 deadline = now + timedelta(days=4)
+#                 status = "Urgent"
+#             else:
+#                 # Set deadline far in the future (Jan 20)
+#                 deadline = now + timedelta(days=17)
+#                 status = "Active"
+
+#             cur.execute(
+#                 """
+#                 INSERT INTO opportunities
+#                 (id, title, description, status, created_at, updated_at, posted_date, deadline, source, type, link)
+#                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+#                 ON CONFLICT (id) DO UPDATE SET
+#                     deadline = EXCLUDED.deadline,
+#                     status = EXCLUDED.status,
+#                     title = EXCLUDED.title
+#                 """,
+#                 (opp_id, title, description, status, created_at, created_at, posted_date, deadline, source, type_, link)
+#             )
+
+#         conn.commit()
+#         print("✅ Sample opportunities with Urgent and Closing Today states inserted!")
+
+#     except Exception as e:
+#         print(f"❌ Error: {e}")
+#     finally:
+#         if cur: cur.close()
+#         if conn: conn.close()
+
+# if __name__ == "__main__":
+#     seed_opportunities()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 import psycopg2
+import os
 from datetime import datetime, timedelta
 
-# PostgreSQL connection details
-DB_CONFIG = {
-    "host": "localhost",
-    "port": 5434,
-    "dbname": "tcoas",
-    "user": "postgres",
-    "password": "Periodicals24!"
-}
+# 1. DATABASE CONFIGURATION
+# Replace the string below with your "External Database URL" from Render
+# It looks like: postgres://user:password@hostname:port/dbname
+DATABASE_URL = "postgresql://tcoas_db_user:R5jutQyDJRYUHYbulD79zSZPrILlcBxa@dpg-d5d9c1ogjchc73dii3fg-a.oregon-postgres.render.com/tcoas_db"
+
+# This logic handles Render's 'postgres://' vs SQLAlchemy/Psycopg2 needs
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
 CREATE_TABLE_SQL = """
 CREATE TABLE IF NOT EXISTS opportunities (
@@ -246,35 +369,35 @@ CREATE TABLE IF NOT EXISTS opportunities (
 );
 """
 
-# logic_type helps us set the correct deadline math below
-# (id, title, desc, source, type, link, logic_type)
 opportunities_to_seed = [
     (1, "Infrastructure Development Consultant - Road Network Expansion", 
      "Urgent technical assessment required for bridge structural integrity.", 
      "PPA", "EOI", "https://ppa.gov.gh/urgent-1", "urgent"),
     
-    (2, "National Census Data Analysis for national data processing", 
+    (2, "National Census Data Analysis - Data Processing", 
      "Final call for proposals for the national data processing project.", 
      "AfDB", "RFP", "https://afdb.org/closing-1", "closing_today"),
 
      (3, "Environmental Impact Assessment - Coastal Development", 
-     "Final call for proposals for the national data processing project.", 
-     "AfDB", "RFP", "https://afdb.org/closing-1", "closing_today"),
+     "Expert analysis of coastal erosion and development impact.", 
+     "AfDB", "RFP", "https://afdb.org/env-1", "closing_today"),
     
     (4, "Digital Literacy Program for Schools", 
      "Long-term consultancy for implementing e-learning platforms.", 
      "World Bank", "Tender", "https://worldbank.org/active-1", "active"),
 
      (5, "Telecom Repair Consultancy Impact Assessment", 
-     "Urgent technical assessment required for bridge structural integrity.", 
-     "PPA", "EOI", "https://ppa.gov.gh/urgent-1", "urgent"),
+     "Technical assessment for nationwide telecom infrastructure repair.", 
+     "PPA", "EOI", "https://ppa.gov.gh/telecom-1", "urgent"),
 ]
 
 def seed_opportunities():
     conn = None
     cur = None
     try:
-        conn = psycopg2.connect(**DB_CONFIG)
+        # Connect using the URL instead of the dictionary
+        print("🌐 Connecting to Render Database...")
+        conn = psycopg2.connect(DATABASE_URL)
         cur = conn.cursor()
 
         print("🔧 Ensuring table 'opportunities' exists...")
@@ -290,15 +413,14 @@ def seed_opportunities():
             
             # DYNAMIC DEADLINE LOGIC
             if logic == "closing_today":
-                # Set deadline to today (Jan 3) at 11:59 PM
+                # Today (Jan 4, 2026)
                 deadline = now.replace(hour=23, minute=59, second=59)
                 status = "ClosingToday"
             elif logic == "urgent":
-                # Set deadline to 2 days from now (Jan 5)
-                deadline = now + timedelta(days=4)
+                # Set to 2 days from now to trigger "Urgent" (< 3 days)
+                deadline = now + timedelta(days=2) 
                 status = "Urgent"
             else:
-                # Set deadline far in the future (Jan 20)
                 deadline = now + timedelta(days=17)
                 status = "Active"
 
@@ -310,13 +432,14 @@ def seed_opportunities():
                 ON CONFLICT (id) DO UPDATE SET
                     deadline = EXCLUDED.deadline,
                     status = EXCLUDED.status,
-                    title = EXCLUDED.title
+                    title = EXCLUDED.title,
+                    link = EXCLUDED.link
                 """,
                 (opp_id, title, description, status, created_at, created_at, posted_date, deadline, source, type_, link)
             )
 
         conn.commit()
-        print("✅ Sample opportunities with Urgent and Closing Today states inserted!")
+        print("✅ Sample opportunities synced to Render successfully!")
 
     except Exception as e:
         print(f"❌ Error: {e}")
