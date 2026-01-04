@@ -111,12 +111,18 @@ export const API_CONFIG = {
   MOCK_MODE: false,
   // BASE_URL: 'http://localhost:8000',
   // BASE_URL: 'http://127.0.0.1:8000', // UPDATED: Changed localhost to 127.0.0.1
-  BASE_URL:
-   Platform.OS === 'android'
-      ? 'http://10.0.2.2:8000'
-      : 'http://localhost:8000',
-  TIMEOUT: 10000,
+//   BASE_URL:
+//    Platform.OS === 'android'
+//       ? 'http://10.0.2.2:8000'
+//       : 'http://localhost:8000',
+//   TIMEOUT: 10000,
+// };
+
+
+BASE_URL: 'https://tcoas-api.onrender.com/',
+  TIMEOUT: 10500,
 };
+
 
 export const PAGINATION = {
   DEFAULT_LIMIT: 20,
