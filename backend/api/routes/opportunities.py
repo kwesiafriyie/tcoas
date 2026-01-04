@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from backend.database.db import SessionLocal
-from backend.models.opportunity import Opportunity
-from backend.schemas.opportunity import OpportunityOut
+from database.db import SessionLocal
+from models.opportunity import Opportunity
+from schemas.opportunity import OpportunityOut
 
 
 router = APIRouter(prefix="/opportunities", tags=["Opportunities"])
