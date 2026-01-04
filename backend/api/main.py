@@ -1,8 +1,8 @@
 # backend/api/main.py
 from fastapi import FastAPI
 from sqlalchemy import text
-from backend.database.db import engine
-from backend.api.routes.opportunities import router as opportunities_router
+from database.db import engine
+from api.routes.opportunities import router as opportunities_router
 
 from fastapi.middleware.cors import CORSMiddleware
 
