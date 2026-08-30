@@ -64,3 +64,24 @@ export const NOTIFICATION_FREQUENCY = [
   { label: 'Daily Digest', value: 'daily', description: 'Once per day summary' },
   { label: 'Weekly Digest', value: 'weekly', description: 'Once per week summary' },
 ];
+
+// Mirrors the web dashboard's own DEADLINE_OPTIONS/SORT_OPTIONS exactly --
+// these values are the literal deadline_within_days/sort query params the
+// backend accepts, not independently-invented mobile labels. `undefined`
+// means "no filter" (all open opportunities). Web's "Custom range" and
+// "Published" filters are deliberately left out here: they need a native
+// date picker, which isn't worth adding for what's a power-user desktop
+// path -- the preset windows below cover the mobile-appropriate case.
+export const DEADLINE_OPTIONS: { label: string; value: number | undefined }[] = [
+  { label: 'All open opportunities', value: undefined },
+  { label: 'Due within 3 days', value: 3 },
+  { label: 'Due within 7 days', value: 7 },
+  { label: 'Due within 10 days', value: 10 },
+  { label: 'Due within 30 days', value: 30 },
+];
+
+export const SORT_OPTIONS: { label: string; value: 'deadline_asc' | 'deadline_desc' | 'newest' }[] = [
+  { label: 'Deadline: Soonest', value: 'deadline_asc' },
+  { label: 'Deadline: Latest', value: 'deadline_desc' },
+  { label: 'Newest', value: 'newest' },
+];
