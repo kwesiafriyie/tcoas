@@ -4,8 +4,10 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Opportunity } from '../types';
 import { getDeadlineText } from '../utils/dateHelpers';
 import { COLORS } from '../utils/constants';
+import { KPMG_FIT_UI_ENABLED } from '../utils/featureFlags';
 import { getUrgencyLevel } from '../utils/statusHelpers';
 import { SourceChip } from './Badges';
+import { FitChip } from './kpmg-fit/FitChip';
 
 interface OpportunityCardProps {
   opportunity: Opportunity;
@@ -76,6 +78,12 @@ export const OpportunityCard: React.FC<OpportunityCardProps> = ({ opportunity, o
         <Text style={styles.viewDetailsText}>View Details</Text>
         <MaterialCommunityIcons name="chevron-right" size={16} color={COLORS.primary} />
       </View>
+
+      {KPMG_FIT_UI_ENABLED ? (
+        <View style={styles.fitChipRow}>
+          <FitChip opportunity={opportunity} />
+        </View>
+      ) : null}
     </TouchableOpacity>
   );
 };
@@ -152,5 +160,8 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
     color: COLORS.primary,
+  },
+  fitChipRow: {
+    marginTop: 8,
   },
 });

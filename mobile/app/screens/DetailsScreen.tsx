@@ -5,11 +5,13 @@ import { Alert, Linking, ScrollView, Share, StyleSheet, Text, TouchableOpacity, 
 import { SourceChip } from '../components/Badges';
 import { DetailSection } from '../components/DetailSection';
 import { EmptyState, LoadingScreen } from '../components/EmptyState';
+import { FitSection } from '../components/kpmg-fit/FitSection';
 import { useJobById } from '../hooks/useJobs';
 import { useSavedJobs } from '../hooks/useSavedJobs';
 import { RootStackParamList } from '../types';
 import { COLORS } from '../utils/constants';
 import { formatDate, getDeadlineText } from '../utils/dateHelpers';
+import { KPMG_FIT_UI_ENABLED } from '../utils/featureFlags';
 import { getUrgencyLevel } from '../utils/statusHelpers';
 
 type DetailScreenRouteProp = RouteProp<RootStackParamList, 'Detail'>;
@@ -194,6 +196,8 @@ export const DetailScreen: React.FC = () => {
           </View>
         </DetailSection>
       ) : null}
+
+      {KPMG_FIT_UI_ENABLED ? <FitSection opportunity={opportunity} /> : null}
 
       <View style={styles.actions}>
         <TouchableOpacity
