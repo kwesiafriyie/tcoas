@@ -47,8 +47,15 @@ export const DetailScreen: React.FC = () => {
   const handleShare = async () => {
     if (!opportunity) return;
     try {
+      const lines = [
+        opportunity.title,
+        opportunity.organization ? `Organization: ${opportunity.organization}` : null,
+        opportunity.deadline ? `Deadline: ${formatDate(opportunity.deadline)}` : null,
+        opportunity.link,
+      ].filter(Boolean);
+
       await Share.share({
-        message: `${opportunity.title}\n\nDeadline: ${formatDate(opportunity.deadline)}\n\n${opportunity.link}`,
+        message: lines.join('\n\n'),
         title: opportunity.title,
       });
     } catch (error) {

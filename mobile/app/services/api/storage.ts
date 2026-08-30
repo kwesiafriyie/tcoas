@@ -2,9 +2,9 @@ import { Notification, NotificationSettings, SavedOpportunity } from '@/app/type
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const SAVED_JOBS_KEY = '@tcoas_saved_jobs';
-const FILTERS_KEY = '@tcoas_filters';
 const NOTIFICATIONS_KEY = '@tcoas_notifications';
 const NOTIFICATION_SETTINGS_KEY = '@tcoas_notification_settings';
+const NOTIFIED_KEYS_KEY = '@tcoas_notified_keys';
 
 // An empty enabledSources list means "no filter set" (all sources), not
 // "no sources enabled" -- see notificationService.ts. Deliberately not a
@@ -67,25 +67,6 @@ export const storage = {
     }
   },
 
-  // Filter persistence
-  async saveFilters(filters: any): Promise<void> {
-    try {
-      await AsyncStorage.setItem(FILTERS_KEY, JSON.stringify(filters));
-    } catch (error) {
-      console.error('Error saving filters:', error);
-    }
-  },
-
-  async getFilters(): Promise<any> {
-    try {
-      const data = await AsyncStorage.getItem(FILTERS_KEY);
-      return data ? JSON.parse(data) : null;
-    } catch (error) {
-      console.error('Error reading filters:', error);
-      return null;
-    }
-  },
-
   // Notifications
   async getNotifications(): Promise<Notification[]> {
     try {
@@ -137,6 +118,33 @@ export const storage = {
     }
   },
 
+  // Which (type, opportunity) notifications have already fired -- persisted
+  // so re-mounting Home (or a full app restart) doesn't regenerate the same
+  // "new opportunity"/"urgent deadline"/"closing today" notification every
+  // time, which it did before this existed (the only prior guard was an
+  // in-memory array that reset on every restart and only covered
+  // new_opportunity, not the two deadline-based types at all).
+  async getNotifiedKeys(): Promise<string[]> {
+    try {
+      const data = await AsyncStorage.getItem(NOTIFIED_KEYS_KEY);
+      return data ? JSON.parse(data) : [];
+    } catch (error) {
+      console.error('Error reading notified keys:', error);
+      return [];
+    }
+  },
+
+  async addNotifiedKeys(keys: string[]): Promise<void> {
+    if (keys.length === 0) return;
+    try {
+      const existing = await this.getNotifiedKeys();
+      const merged = Array.from(new Set([...existing, ...keys]));
+      await AsyncStorage.setItem(NOTIFIED_KEYS_KEY, JSON.stringify(merged));
+    } catch (error) {
+      console.error('Error saving notified keys:', error);
+    }
+  },
+
   // Notification settings
   async getNotificationSettings(): Promise<NotificationSettings> {
     try {
@@ -159,7 +167,7 @@ export const storage = {
 
   async clearAll(): Promise<void> {
     try {
-      await AsyncStorage.multiRemove([SAVED_JOBS_KEY, FILTERS_KEY, NOTIFICATIONS_KEY, NOTIFICATION_SETTINGS_KEY]);
+      await AsyncStorage.multiRemove([SAVED_JOBS_KEY, NOTIFICATIONS_KEY, NOTIFICATION_SETTINGS_KEY, NOTIFIED_KEYS_KEY]);
     } catch (error) {
       console.error('Error clearing storage:', error);
     }

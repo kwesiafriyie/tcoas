@@ -4,27 +4,35 @@ import { getDaysUntilDeadline } from '@/app/utils/dateHelpers';
 import { storage } from './storage';
 
 class NotificationService {
-  private lastCheckedOpportunities: number[] = [];
-
   // Generate notifications for new or updated opportunities. `opportunities`
   // is whatever the API returned -- it's already open-only, so there's no
   // separate expiry check needed here.
+  //
+  // Each (type, opportunity) pair fires at most once ever, tracked via a
+  // persisted key set (storage.getNotifiedKeys/addNotifiedKeys) -- not an
+  // in-memory array, which would (and previously did) regenerate every
+  // notification again on every app restart, since Home re-mounts and
+  // re-runs this on a completely fresh in-memory state each time.
   async checkAndGenerateNotifications(opportunities: Opportunity[]): Promise<void> {
     const settings = await storage.getNotificationSettings();
+    const notifiedKeys = new Set(await storage.getNotifiedKeys());
+    const newKeys: string[] = [];
 
     for (const opp of opportunities) {
       // An empty list means "no source filter set" -- notify for all
       // sources, rather than the empty array silently blocking everything.
       if (settings.enabledSources.length > 0 && !settings.enabledSources.includes(opp.source)) continue;
 
-      if (!this.lastCheckedOpportunities.includes(opp.id)) {
+      const newKey = `new_opportunity:${opp.id}`;
+      if (!notifiedKeys.has(newKey)) {
         await this.generateNewOpportunityNotification(opp, settings.enabledTypes);
+        newKeys.push(newKey);
       }
 
-      await this.generateDeadlineNotifications(opp, settings.enabledTypes);
+      newKeys.push(...(await this.generateDeadlineNotifications(opp, settings.enabledTypes, notifiedKeys)));
     }
 
-    this.lastCheckedOpportunities = opportunities.map((o) => o.id);
+    await storage.addNotifiedKeys(newKeys);
   }
 
   private async generateNewOpportunityNotification(
@@ -46,14 +54,20 @@ class NotificationService {
     await storage.saveNotification(notification);
   }
 
+  // Returns the keys that were actually newly notified, so the caller can
+  // persist them alongside the new_opportunity key in one batched write.
   private async generateDeadlineNotifications(
     opportunity: Opportunity,
-    enabledTypes: NotificationType[]
-  ): Promise<void> {
+    enabledTypes: NotificationType[],
+    notifiedKeys: Set<string>
+  ): Promise<string[]> {
     const daysLeft = getDaysUntilDeadline(opportunity.deadline);
-    if (daysLeft === null) return; // no deadline -- nothing time-based to notify about
+    if (daysLeft === null) return []; // no deadline -- nothing time-based to notify about
 
-    if (daysLeft === 0 && enabledTypes.includes('closing_today')) {
+    const fired: string[] = [];
+
+    const closingKey = `closing_today:${opportunity.id}`;
+    if (daysLeft === 0 && enabledTypes.includes('closing_today') && !notifiedKeys.has(closingKey)) {
       const notification: Notification = {
         id: `closing_${opportunity.id}_${Date.now()}`,
         type: 'closing_today',
@@ -63,11 +77,17 @@ class NotificationService {
         read: false,
         opportunityId: opportunity.id,
       };
-
       await storage.saveNotification(notification);
+      fired.push(closingKey);
     }
 
-    if (daysLeft > 0 && daysLeft <= DEADLINE_THRESHOLDS.URGENT_DAYS && enabledTypes.includes('urgent_deadline')) {
+    const urgentKey = `urgent_deadline:${opportunity.id}`;
+    if (
+      daysLeft > 0 &&
+      daysLeft <= DEADLINE_THRESHOLDS.URGENT_DAYS &&
+      enabledTypes.includes('urgent_deadline') &&
+      !notifiedKeys.has(urgentKey)
+    ) {
       const notification: Notification = {
         id: `urgent_${opportunity.id}_${Date.now()}`,
         type: 'urgent_deadline',
@@ -77,9 +97,11 @@ class NotificationService {
         read: false,
         opportunityId: opportunity.id,
       };
-
       await storage.saveNotification(notification);
+      fired.push(urgentKey);
     }
+
+    return fired;
   }
 
   async generateSystemNotification(title: string, message: string): Promise<void> {
