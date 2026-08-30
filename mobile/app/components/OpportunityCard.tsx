@@ -1,30 +1,25 @@
-// src/components/OpportunityCard.tsx
-
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Opportunity } from '../types';
 import { COLORS } from '../utils/constants';
-import { DeadlineBadge, SourceChip, StatusBadge } from './Badges';
-import { calculateStatus } from '../utils/statusHelpers';
+import { getUrgencyLevel } from '../utils/statusHelpers';
+import { DeadlineBadge, SourceChip, UrgencyBadge } from './Badges';
 
 interface OpportunityCardProps {
   opportunity: Opportunity;
   onPress: () => void;
 }
 
-export const OpportunityCard: React.FC<OpportunityCardProps> = ({
-  opportunity,
-  onPress,
-}) => {
-
-  // IGNORE opportunity.status from the DB (which is hardcoded/static)
-  // CALCULATE it on the fly based on the actual deadline date
-  const dynamicStatus = calculateStatus(opportunity.deadline);
+// Note: this is the v0 card layout, carried over as-is for Phase 2 (data
+// layer only) -- it doesn't yet show organization/country/description or
+// use the current web card's information hierarchy. That's Phase 5's job.
+export const OpportunityCard: React.FC<OpportunityCardProps> = ({ opportunity, onPress }) => {
+  const urgency = getUrgencyLevel(opportunity.deadline);
 
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
       <View style={styles.header}>
-        <StatusBadge status={dynamicStatus} />
+        <UrgencyBadge urgency={urgency} />
         <SourceChip source={opportunity.source} />
       </View>
 
@@ -34,7 +29,7 @@ export const OpportunityCard: React.FC<OpportunityCardProps> = ({
 
       <View style={styles.footer}>
         <DeadlineBadge deadline={opportunity.deadline} />
-        <Text style={styles.type}>{opportunity.type}</Text>
+        {opportunity.opportunity_type ? <Text style={styles.type}>{opportunity.opportunity_type}</Text> : null}
       </View>
     </TouchableOpacity>
   );

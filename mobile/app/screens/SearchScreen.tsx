@@ -5,43 +5,43 @@ import React, { useState } from 'react';
 import { FlatList, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { EmptyState, LoadingScreen } from '../components/EmptyState';
 import { OpportunityCard } from '../components/OpportunityCard';
-import { useJobs } from '../hooks/useJobs';
-import { JobsQueryParams, RootStackParamList } from '../types';
-import { COLORS, SOURCES, STATUS_OPTIONS } from '../utils/constants';
+import { useFilters, useJobs } from '../hooks/useJobs';
+import { OpportunityQueryParams, RootStackParamList } from '../types';
+import { COLORS } from '../utils/constants';
 
 type SearchScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'MainTabs'>;
 
+// Note: this is a Phase 2 (data layer) update -- it wires the existing
+// chip-panel UI to the real API with real, single-select filter values
+// (the backend takes one source/sector at a time, not a comma-joined
+// multi-select the way v0's UI implied). The bottom-sheet filter pattern
+// and multi-filter-together UX described for the current product is
+// Phase 4's job, not this one.
 export const SearchScreen: React.FC = () => {
   const navigation = useNavigation<SearchScreenNavigationProp>();
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedSources, setSelectedSources] = useState<string[]>([]);
-  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
+  const [selectedSource, setSelectedSource] = useState<string | undefined>();
+  const [selectedSector, setSelectedSector] = useState<string | undefined>();
   const [showFilters, setShowFilters] = useState(false);
 
-  const params: JobsQueryParams = {
+  const { data: filters } = useFilters();
+
+  const params: OpportunityQueryParams = {
     search: searchQuery || undefined,
-    source: selectedSources.length > 0 ? selectedSources.join(',') : undefined,
-    status: selectedStatuses.length > 0 ? selectedStatuses.join(',') : undefined,
+    source: selectedSource,
+    sector: selectedSector,
     limit: 50,
   };
 
   const { data, isLoading, isError } = useJobs(params);
 
-  const toggleSource = (source: string) => {
-    setSelectedSources(prev => prev.includes(source) ? prev.filter(s => s !== source) : [...prev, source]);
-  };
-
-  const toggleStatus = (status: string) => {
-    setSelectedStatuses(prev => prev.includes(status) ? prev.filter(s => s !== status) : [...prev, status]);
-  };
-
   const clearFilters = () => {
     setSearchQuery('');
-    setSelectedSources([]);
-    setSelectedStatuses([]);
+    setSelectedSource(undefined);
+    setSelectedSector(undefined);
   };
 
-  const hasActiveFilters = searchQuery || selectedSources.length > 0 || selectedStatuses.length > 0;
+  const hasActiveFilters = !!(searchQuery || selectedSource || selectedSector);
 
   if (isError) {
     return (
@@ -92,14 +92,14 @@ export const SearchScreen: React.FC = () => {
           <View style={styles.filterGroup}>
             <Text style={styles.filterGroupTitle}>Source</Text>
             <View style={styles.chipContainer}>
-              {SOURCES.map(source => (
+              {(filters?.sources || []).map((source) => (
                 <TouchableOpacity
                   key={source.value}
-                  style={[styles.chip, selectedSources.includes(source.value) && styles.chipSelected]}
-                  onPress={() => toggleSource(source.value)}
+                  style={[styles.chip, selectedSource === source.value && styles.chipSelected]}
+                  onPress={() => setSelectedSource(selectedSource === source.value ? undefined : source.value)}
                 >
-                  <Text style={[styles.chipText, selectedSources.includes(source.value) && styles.chipTextSelected]}>
-                    {source.label}
+                  <Text style={[styles.chipText, selectedSource === source.value && styles.chipTextSelected]}>
+                    {source.value} ({source.count})
                   </Text>
                 </TouchableOpacity>
               ))}
@@ -107,16 +107,16 @@ export const SearchScreen: React.FC = () => {
           </View>
 
           <View style={styles.filterGroup}>
-            <Text style={styles.filterGroupTitle}>Status</Text>
+            <Text style={styles.filterGroupTitle}>Sector</Text>
             <View style={styles.chipContainer}>
-              {STATUS_OPTIONS.map(status => (
+              {(filters?.sectors || []).map((sector) => (
                 <TouchableOpacity
-                  key={status.value}
-                  style={[styles.chip, selectedStatuses.includes(status.value) && styles.chipSelected]}
-                  onPress={() => toggleStatus(status.value)}
+                  key={sector.value}
+                  style={[styles.chip, selectedSector === sector.value && styles.chipSelected]}
+                  onPress={() => setSelectedSector(selectedSector === sector.value ? undefined : sector.value)}
                 >
-                  <Text style={[styles.chipText, selectedStatuses.includes(status.value) && styles.chipTextSelected]}>
-                    {status.label}
+                  <Text style={[styles.chipText, selectedSector === sector.value && styles.chipTextSelected]}>
+                    {sector.value} ({sector.count})
                   </Text>
                 </TouchableOpacity>
               ))}

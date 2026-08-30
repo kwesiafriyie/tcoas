@@ -1,5 +1,3 @@
-// src/services/api/client.ts
-
 import axios from 'axios';
 import { API_CONFIG } from '../../utils/constants';
 
@@ -11,17 +9,8 @@ const apiClient = axios.create({
   },
 });
 
-apiClient.interceptors.request.use(
-  (config) => {
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
-
 apiClient.interceptors.response.use(
-  (response) => (console.log(response.data),  response),
+  (response) => response,
   (error) => {
     if (error.response) {
       console.error('API Error:', error.response.status, error.response.data);

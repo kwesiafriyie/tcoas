@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { storage } from '../services/api/storage';
-import { Notification, NotificationType, SourceType } from '../types';
+import { Notification, NotificationType } from '../types';
 
 export const useNotifications = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -70,7 +70,7 @@ export const useNotifications = () => {
 export const useNotificationSettings = () => {
   const [settings, setSettings] = useState({
     enabledTypes: [] as NotificationType[],
-    enabledSources: [] as SourceType[],
+    enabledSources: [] as string[],
     frequency: 'instant' as 'instant' | 'daily' | 'weekly',
   });
   const [loading, setLoading] = useState(true);

@@ -2,26 +2,31 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { RouteProp, useRoute } from '@react-navigation/native';
 import React from 'react';
 import { Alert, Linking, ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { DeadlineBadge, SourceChip, StatusBadge } from '../components/Badges';
+import { DeadlineBadge, SourceChip, UrgencyBadge } from '../components/Badges';
 import { EmptyState, LoadingScreen } from '../components/EmptyState';
 import { useJobById } from '../hooks/useJobs';
 import { useSavedJobs } from '../hooks/useSavedJobs';
 import { RootStackParamList } from '../types';
 import { COLORS } from '../utils/constants';
 import { formatDate } from '../utils/dateHelpers';
+import { getUrgencyLevel } from '../utils/statusHelpers';
 
 type DetailScreenRouteProp = RouteProp<RootStackParamList, 'Detail'>;
 
+// Note: this is the v0 detail layout, carried over as-is for Phase 2 (data
+// layer only) -- binding the new fields correctly without yet building the
+// sectioned Core Info / Overview / Requirements / Documents / Contact
+// layout. That's Phase 6's job.
 export const DetailScreen: React.FC = () => {
   const route = useRoute<DetailScreenRouteProp>();
   const { opportunityId } = route.params;
-  
+
   const { data: opportunity, isLoading, isError } = useJobById(opportunityId);
   const { isJobSaved, toggleSave } = useSavedJobs();
 
   const handleOpenLink = async () => {
     if (!opportunity?.link) return;
-    
+
     try {
       const supported = await Linking.canOpenURL(opportunity.link);
       if (supported) {
@@ -29,14 +34,14 @@ export const DetailScreen: React.FC = () => {
       } else {
         Alert.alert('Error', 'Cannot open this link');
       }
-    } catch (error) {
+    } catch {
       Alert.alert('Error', 'Failed to open link');
     }
   };
 
   const handleShare = async () => {
     if (!opportunity) return;
-    
+
     try {
       await Share.share({
         message: `${opportunity.title}\n\nDeadline: ${formatDate(opportunity.deadline)}\n\n${opportunity.link}`,
@@ -50,7 +55,7 @@ export const DetailScreen: React.FC = () => {
   const handleToggleSave = async () => {
     try {
       await toggleSave(opportunityId);
-    } catch (error) {
+    } catch {
       Alert.alert('Error', 'Failed to save opportunity');
     }
   };
@@ -68,46 +73,58 @@ export const DetailScreen: React.FC = () => {
   }
 
   const saved = isJobSaved(opportunityId);
+  const urgency = getUrgencyLevel(opportunity.deadline);
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.badges}>
-        <StatusBadge status={opportunity.status} />
+        <UrgencyBadge urgency={urgency} />
         <SourceChip source={opportunity.source} />
       </View>
 
       <Text style={styles.title}>{opportunity.title}</Text>
 
       <View style={styles.metadata}>
+        {opportunity.organization ? (
+          <View style={styles.metadataRow}>
+            <MaterialCommunityIcons name="domain" size={20} color={COLORS.textSecondary} />
+            <Text style={styles.metadataText}>{opportunity.organization}</Text>
+          </View>
+        ) : null}
+
         <View style={styles.metadataRow}>
           <MaterialCommunityIcons name="calendar" size={20} color={COLORS.textSecondary} />
           <Text style={styles.metadataText}>Deadline: {formatDate(opportunity.deadline)}</Text>
         </View>
-        
-        <View style={styles.metadataRow}>
-          <MaterialCommunityIcons name="clock-outline" size={20} color={COLORS.textSecondary} />
-          <Text style={styles.metadataText}>Posted: {formatDate(opportunity.posted_date)}</Text>
-        </View>
 
         <View style={styles.metadataRow}>
-          <MaterialCommunityIcons name="file-document-outline" size={20} color={COLORS.textSecondary} />
-          <Text style={styles.metadataText}>Type: {opportunity.type}</Text>
+          <MaterialCommunityIcons name="clock-outline" size={20} color={COLORS.textSecondary} />
+          <Text style={styles.metadataText}>Posted: {formatDate(opportunity.published_at)}</Text>
         </View>
+
+        {opportunity.opportunity_type ? (
+          <View style={styles.metadataRow}>
+            <MaterialCommunityIcons name="file-document-outline" size={20} color={COLORS.textSecondary} />
+            <Text style={styles.metadataText}>Type: {opportunity.opportunity_type}</Text>
+          </View>
+        ) : null}
       </View>
 
       <View style={styles.deadlineSection}>
         <DeadlineBadge deadline={opportunity.deadline} />
       </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Description</Text>
-        <Text style={styles.description}>{opportunity.description}</Text>
-      </View>
+      {opportunity.description ? (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Description</Text>
+          <Text style={styles.description}>{opportunity.description}</Text>
+        </View>
+      ) : null}
 
       <View style={styles.actions}>
         <TouchableOpacity style={[styles.actionButton, styles.primaryButton]} onPress={handleOpenLink}>
           <MaterialCommunityIcons name="open-in-new" size={20} color="#FFFFFF" />
-          <Text style={styles.primaryButtonText}>Open Original Link</Text>
+          <Text style={styles.primaryButtonText}>Visit Official Source</Text>
         </TouchableOpacity>
 
         <View style={styles.secondaryActions}>

@@ -4,21 +4,27 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 import { LoadingScreen } from '../components/EmptyState';
+import { useFilters } from '../hooks/useJobs';
 import { useNotificationSettings } from '../hooks/useNotifications';
-import { NotificationType, SourceType } from '../types';
-import { COLORS, NOTIFICATION_FREQUENCY, NOTIFICATION_TYPES, SOURCES } from '../utils/constants';
+import { NotificationType } from '../types';
+import { COLORS, NOTIFICATION_FREQUENCY, NOTIFICATION_TYPES } from '../utils/constants';
 
 export const NotificationSettingsScreen: React.FC = () => {
   const { settings, loading, updateSettings } = useNotificationSettings();
-  
+  // Sources come from the live API (GET /api/opportunities/filters), not a
+  // hardcoded list -- v0's hardcoded SOURCES only knew about 4 sources and
+  // had no UNGM, which meant this screen could never actually offer most
+  // real sources.
+  const { data: filters } = useFilters();
+
   const [enabledTypes, setEnabledTypes] = useState<NotificationType[]>([]);
-  const [enabledSources, setEnabledSources] = useState<SourceType[]>([]);
+  const [enabledSources, setEnabledSources] = useState<string[]>([]);
   const [frequency, setFrequency] = useState<'instant' | 'daily' | 'weekly'>('instant');
 
   useEffect(() => {
     if (!loading) {
       setEnabledTypes(settings.enabledTypes);
-      setEnabledSources(settings.enabledSources as SourceType[]);
+      setEnabledSources(settings.enabledSources);
       setFrequency(settings.frequency);
     }
   }, [settings, loading]);
@@ -27,16 +33,16 @@ export const NotificationSettingsScreen: React.FC = () => {
     const updated = enabledTypes.includes(type)
       ? enabledTypes.filter(t => t !== type)
       : [...enabledTypes, type];
-    
+
     setEnabledTypes(updated);
     saveSettings({ enabledTypes: updated, enabledSources, frequency });
   };
 
-  const toggleSource = (source: SourceType) => {
+  const toggleSource = (source: string) => {
     const updated = enabledSources.includes(source)
       ? enabledSources.filter(s => s !== source)
       : [...enabledSources, source];
-    
+
     setEnabledSources(updated);
     saveSettings({ enabledTypes, enabledSources: updated, frequency });
   };
@@ -49,7 +55,7 @@ export const NotificationSettingsScreen: React.FC = () => {
   const saveSettings = async (newSettings: typeof settings) => {
     try {
       await updateSettings(newSettings);
-    } catch (error) {
+    } catch {
       Alert.alert('Error', 'Failed to save settings');
     }
   };
@@ -89,14 +95,14 @@ export const NotificationSettingsScreen: React.FC = () => {
           Select which sources you want to receive notifications from
         </Text>
         
-        {SOURCES.map((source) => (
+        {(filters?.sources || []).map((source) => (
           <View key={source.value} style={styles.settingRow}>
             <View style={styles.settingInfo}>
-              <Text style={styles.settingLabel}>{source.label}</Text>
+              <Text style={styles.settingLabel}>{source.value}</Text>
             </View>
             <Switch
-              value={enabledSources.includes(source.value as SourceType)}
-              onValueChange={() => toggleSource(source.value as SourceType)}
+              value={enabledSources.includes(source.value)}
+              onValueChange={() => toggleSource(source.value)}
               trackColor={{ false: COLORS.border, true: COLORS.primary }}
             />
           </View>
