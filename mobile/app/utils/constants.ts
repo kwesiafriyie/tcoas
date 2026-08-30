@@ -19,8 +19,13 @@ export const COLORS = {
   success: '#4CAF50',
   warning: '#FF9800',
   error: '#F44336',
-  urgent: '#F57C00',
-  active: '#388E3C',
+  // Urgent and closing-today intentionally share one amber tone, matching
+  // the web card's own DeadlineBadge: "the same color for every urgent
+  // tier (no separate red panic state) -- the point is to help users
+  // prioritize, not alarm them." "Today" is conveyed in the label text,
+  // not a hotter color.
+  urgent: '#B45309',
+  active: '#64748B',
   closingToday: '#E91E63',
   background: '#F5F5F5',
   surface: '#FFFFFF',
@@ -29,6 +34,26 @@ export const COLORS = {
   border: '#E0E0E0',
   badge: '#FF3B30',
 };
+
+// Per-source identity colors, ported from the web card's SOURCE_STYLES so
+// the same opportunity reads as the same source on both platforms. Falls
+// back to a neutral chip for any source not in this map (e.g. a newly
+// added scraper source not yet given its own color on web either).
+export const SOURCE_COLORS: Record<string, { bg: string; text: string }> = {
+  'standard.gm': { bg: '#EFF6FF', text: '#1D4ED8' },
+  'thepoint.gm': { bg: '#ECFDF5', text: '#047857' },
+  'foroyaa.net': { bg: '#F5F3FF', text: '#6D28D9' },
+  'dailyobservergambia.com': { bg: '#FFF1F2', text: '#BE123C' },
+  'gambiatenders.com': { bg: '#FFFBEB', text: '#B45309' },
+  'tenders.gm': { bg: '#ECFEFF', text: '#0E7490' },
+  'gppa.gm': { bg: '#F0FDFA', text: '#0F766E' },
+  'tenders.ppa.gov.gh': { bg: '#EEF2FF', text: '#4338CA' },
+  'tenders.com.gh': { bg: '#FDF4FF', text: '#A21CAF' },
+  UNGM: { bg: '#F0F9FF', text: '#0369A1' },
+  AfDB: { bg: '#F7FEE7', text: '#4D7C0F' },
+};
+
+export const DEFAULT_SOURCE_COLOR = { bg: '#F1F5F9', text: '#475569' };
 
 export const API_CONFIG = {
   // Strip a trailing slash so callers can safely do `${BASE_URL}/api/...`

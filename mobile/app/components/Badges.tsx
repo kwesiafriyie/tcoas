@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { UrgencyLevel } from '../types';
-import { COLORS } from '../utils/constants';
+import { COLORS, DEFAULT_SOURCE_COLOR, SOURCE_COLORS } from '../utils/constants';
 import { getDeadlineText } from '../utils/dateHelpers';
 import { getUrgencyColor, getUrgencyDisplayText } from '../utils/statusHelpers';
 
@@ -38,10 +38,15 @@ interface SourceChipProps {
   source: string;
 }
 
+// Per-source identity color (ported from the web card's SOURCE_STYLES) so
+// the same opportunity reads as the same source on both platforms, instead
+// of every source sharing one flat neutral chip.
 export const SourceChip: React.FC<SourceChipProps> = ({ source }) => {
+  const { bg, text } = SOURCE_COLORS[source] || DEFAULT_SOURCE_COLOR;
+
   return (
-    <View style={styles.sourceChip}>
-      <Text style={styles.sourceText}>{source}</Text>
+    <View style={[styles.sourceChip, { backgroundColor: bg }]}>
+      <Text style={[styles.sourceText, { color: text }]}>{source}</Text>
     </View>
   );
 };
@@ -72,16 +77,13 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   sourceChip: {
-    backgroundColor: COLORS.background,
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 8,
-    borderWidth: 1,
-    borderColor: COLORS.border,
   },
   sourceText: {
-    color: COLORS.textSecondary,
     fontSize: 11,
-    fontWeight: '600',
+    fontWeight: '700',
+    textTransform: 'uppercase',
   },
 });
