@@ -1,50 +1,67 @@
-# Welcome to your Expo app 👋
+# TCOAS Mobile
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Expo / React Native client for the consulting opportunities platform. It
+consumes the same backend as the web app (see the `rfp-opportunities`
+repository) -- both clients read from one normalized opportunity API; no
+business logic (open/expired status, filtering, sorting) is duplicated here.
 
 ## Get started
 
-1. Install dependencies
-
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
 ```bash
-npm run reset-project
+npm install
+npx expo start
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+By default this points at a local backend on `http://localhost:8000`
+(`http://10.0.2.2:8000` on the Android emulator, since it can't resolve
+`localhost` as the host machine). To point at a real backend, set
+`EXPO_PUBLIC_API_URL` before starting:
+
+```bash
+EXPO_PUBLIC_API_URL=https://consulting-opportunities-api.onrender.com npx expo start
+```
+
+In the output you'll find options to open the app in a development build,
+an Android emulator, an iOS simulator, or [Expo Go](https://expo.dev/go).
+
+## Navigation
+
+This app uses [React Navigation](https://reactnavigation.org) directly
+(`app/navigation/appnavigator.tsx`) -- a bottom-tab navigator (Home,
+Search, Saved, Settings) nested in a stack navigator (adds Opportunity
+Details, Notifications, Notification Settings on top). It does **not**
+use Expo Router or file-based routing, despite the source living under an
+`app/` directory (a holdover from the project's original scaffold).
+`index.js` at the repo root registers `app/index.tsx`'s `App` component as
+the entry point.
+
+## Regenerating API types
+
+`app/types/api.generated.ts` is generated from the backend's OpenAPI
+schema, not hand-maintained. Re-run this whenever the backend's
+`OpportunityOut` schema changes:
+
+```bash
+npm run generate:types
+```
+
+By default this reads from `http://localhost:8000/openapi.json`; set
+`EXPO_PUBLIC_API_URL` to point it at a different backend first.
+
+## Project structure
+
+```
+app/
+├── components/     Opportunity card, badges, empty/loading states
+├── hooks/          React Query hooks (useJobs, useFilters, useNotifications, useSavedJobs)
+├── navigation/      React Navigation setup
+├── screens/        Home, Search, Details, Saved, Settings, Notifications
+├── services/api/   API client, saved/notifications AsyncStorage persistence
+├── types/          Generated API types + local (saved/notification) types
+└── utils/          Date/urgency helpers, constants
+```
 
 ## Learn more
 
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- [Expo documentation](https://docs.expo.dev/)
+- [React Navigation documentation](https://reactnavigation.org/docs/getting-started/)
