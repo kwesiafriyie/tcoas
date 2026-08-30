@@ -1,5 +1,5 @@
 import { UrgencyLevel } from '../types';
-import { COLORS, DEADLINE_THRESHOLDS } from './constants';
+import { DEADLINE_THRESHOLDS } from './constants';
 import { getDaysUntilDeadline } from './dateHelpers';
 
 // Presentation-only: how urgently a deadline should read on screen. This is
@@ -16,39 +16,6 @@ export const getUrgencyLevel = (deadline?: string | null): UrgencyLevel => {
   if (daysLeft <= 0) return 'closing_today';
   if (daysLeft <= DEADLINE_THRESHOLDS.URGENT_DAYS) return 'urgent';
   return 'active';
-};
-
-export const getUrgencyColor = (level: UrgencyLevel): string => {
-  switch (level) {
-    case 'closing_today':
-      return COLORS.closingToday;
-    case 'urgent':
-      return COLORS.urgent;
-    default:
-      return COLORS.active;
-  }
-};
-
-export const getUrgencyIcon = (level: UrgencyLevel): string => {
-  switch (level) {
-    case 'closing_today':
-      return 'alert-circle';
-    case 'urgent':
-      return 'clock-alert';
-    default:
-      return 'check-circle';
-  }
-};
-
-export const getUrgencyDisplayText = (level: UrgencyLevel): string => {
-  switch (level) {
-    case 'closing_today':
-      return 'Closing Today';
-    case 'urgent':
-      return 'Urgent';
-    default:
-      return 'Active';
-  }
 };
 
 // No-deadline opportunities sort last -- they carry no time pressure, so
