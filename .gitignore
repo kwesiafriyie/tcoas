@@ -1,0 +1,39 @@
+# Environment files -- never commit real secrets
+.env
+.env.*
+!.env.example
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+
+# Node / JS
+node_modules/
+dist/
+build/
+.expo/
+web-build/
+*.tsbuildinfo
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# Native (Expo/React Native)
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+.metro-health-check*
+/ios
+/android
+
+# OS
+.DS_Store
+*.pem

@@ -343,11 +343,16 @@
 import psycopg2
 import os
 from datetime import datetime, timedelta
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # 1. DATABASE CONFIGURATION
-# Replace the string below with your "External Database URL" from Render
-# It looks like: postgres://user:password@hostname:port/dbname
-DATABASE_URL = "postgresql://tcoas_db_user:R5jutQyDJRYUHYbulD79zSZPrILlcBxa@dpg-d5d9c1ogjchc73dii3fg-a.oregon-postgres.render.com/tcoas_db"
+# Set DATABASE_URL in backend/.env (see backend/.env.example) -- never commit
+# a real connection string directly in this file.
+DATABASE_URL = os.getenv("DATABASE_URL")
+if not DATABASE_URL:
+    raise RuntimeError("DATABASE_URL is not set. Add it to backend/.env before running this script.")
 
 # This logic handles Render's 'postgres://' vs SQLAlchemy/Psycopg2 needs
 if DATABASE_URL.startswith("postgres://"):
