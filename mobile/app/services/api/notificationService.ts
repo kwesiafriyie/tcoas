@@ -1,35 +1,38 @@
-// src/services/notificationService.ts - NEW
-
 import { Notification, NotificationType, Opportunity } from '@/app/types';
+import { DEADLINE_THRESHOLDS } from '@/app/utils/constants';
 import { getDaysUntilDeadline } from '@/app/utils/dateHelpers';
-import { calculateStatus, shouldShowOpportunity } from '@/app/utils/statusHelpers';
 import { storage } from './storage';
 
 class NotificationService {
-  private lastCheckedOpportunities: number[] = [];
-
-  // Generate notifications for new or updated opportunities
+  // Generate notifications for new or updated opportunities. `opportunities`
+  // is whatever the API returned -- it's already open-only, so there's no
+  // separate expiry check needed here.
+  //
+  // Each (type, opportunity) pair fires at most once ever, tracked via a
+  // persisted key set (storage.getNotifiedKeys/addNotifiedKeys) -- not an
+  // in-memory array, which would (and previously did) regenerate every
+  // notification again on every app restart, since Home re-mounts and
+  // re-runs this on a completely fresh in-memory state each time.
   async checkAndGenerateNotifications(opportunities: Opportunity[]): Promise<void> {
     const settings = await storage.getNotificationSettings();
-    
+    const notifiedKeys = new Set(await storage.getNotifiedKeys());
+    const newKeys: string[] = [];
+
     for (const opp of opportunities) {
-      // Skip if opportunity is expired
-      if (!shouldShowOpportunity(opp.deadline)) continue;
+      // An empty list means "no source filter set" -- notify for all
+      // sources, rather than the empty array silently blocking everything.
+      if (settings.enabledSources.length > 0 && !settings.enabledSources.includes(opp.source)) continue;
 
-      // Skip if source not enabled
-      if (!settings.enabledSources.includes(opp.source)) continue;
-
-      // Check if this is a new opportunity
-      if (!this.lastCheckedOpportunities.includes(opp.id)) {
+      const newKey = `new_opportunity:${opp.id}`;
+      if (!notifiedKeys.has(newKey)) {
         await this.generateNewOpportunityNotification(opp, settings.enabledTypes);
+        newKeys.push(newKey);
       }
 
-      // Check deadline-based notifications
-      await this.generateDeadlineNotifications(opp, settings.enabledTypes);
+      newKeys.push(...(await this.generateDeadlineNotifications(opp, settings.enabledTypes, notifiedKeys)));
     }
 
-    // Update tracked opportunities
-    this.lastCheckedOpportunities = opportunities.map(o => o.id);
+    await storage.addNotifiedKeys(newKeys);
   }
 
   private async generateNewOpportunityNotification(
@@ -51,15 +54,20 @@ class NotificationService {
     await storage.saveNotification(notification);
   }
 
+  // Returns the keys that were actually newly notified, so the caller can
+  // persist them alongside the new_opportunity key in one batched write.
   private async generateDeadlineNotifications(
     opportunity: Opportunity,
-    enabledTypes: NotificationType[]
-  ): Promise<void> {
+    enabledTypes: NotificationType[],
+    notifiedKeys: Set<string>
+  ): Promise<string[]> {
     const daysLeft = getDaysUntilDeadline(opportunity.deadline);
-    const status = calculateStatus(opportunity.deadline);
+    if (daysLeft === null) return []; // no deadline -- nothing time-based to notify about
 
-    // Closing today notification
-    if (daysLeft === 0 && enabledTypes.includes('closing_today')) {
+    const fired: string[] = [];
+
+    const closingKey = `closing_today:${opportunity.id}`;
+    if (daysLeft === 0 && enabledTypes.includes('closing_today') && !notifiedKeys.has(closingKey)) {
       const notification: Notification = {
         id: `closing_${opportunity.id}_${Date.now()}`,
         type: 'closing_today',
@@ -69,12 +77,17 @@ class NotificationService {
         read: false,
         opportunityId: opportunity.id,
       };
-
       await storage.saveNotification(notification);
+      fired.push(closingKey);
     }
 
-    // Urgent deadline notification (5 days or less)
-    if (daysLeft > 0 && daysLeft <= 5 && enabledTypes.includes('urgent_deadline')) {
+    const urgentKey = `urgent_deadline:${opportunity.id}`;
+    if (
+      daysLeft > 0 &&
+      daysLeft <= DEADLINE_THRESHOLDS.URGENT_DAYS &&
+      enabledTypes.includes('urgent_deadline') &&
+      !notifiedKeys.has(urgentKey)
+    ) {
       const notification: Notification = {
         id: `urgent_${opportunity.id}_${Date.now()}`,
         type: 'urgent_deadline',
@@ -84,12 +97,13 @@ class NotificationService {
         read: false,
         opportunityId: opportunity.id,
       };
-
       await storage.saveNotification(notification);
+      fired.push(urgentKey);
     }
+
+    return fired;
   }
 
-  // Generate a system notification
   async generateSystemNotification(title: string, message: string): Promise<void> {
     const settings = await storage.getNotificationSettings();
     if (!settings.enabledTypes.includes('system')) return;
@@ -104,51 +118,6 @@ class NotificationService {
     };
 
     await storage.saveNotification(notification);
-  }
-
-  // Create sample notifications for testing
-  async generateSampleNotifications(): Promise<void> {
-    const samples: Notification[] = [
-      {
-        id: `sample_1_${Date.now()}`,
-        type: 'new_opportunity',
-        title: 'New Opportunity Available',
-        message: 'Infrastructure Development Consultant - Road Network Expansion from PPA',
-        timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
-        read: false,
-        opportunityId: 1,
-      },
-      {
-        id: `sample_2_${Date.now()}`,
-        type: 'urgent_deadline',
-        title: '🔔 Urgent Deadline Approaching',
-        message: 'Financial Advisory Services closes in 3 days',
-        timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(), // 5 hours ago
-        read: false,
-        opportunityId: 2,
-      },
-      {
-        id: `sample_3_${Date.now()}`,
-        type: 'closing_today',
-        title: '⚠️ Closing Today!',
-        message: 'Environmental Impact Assessment deadline is today!',
-        timestamp: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(), // 1 hour ago
-        read: false,
-        opportunityId: 4,
-      },
-      {
-        id: `sample_4_${Date.now()}`,
-        type: 'system',
-        title: 'Welcome to TCOAS',
-        message: 'Stay updated on tender and consultancy opportunities from trusted sources.',
-        timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
-        read: true,
-      },
-    ];
-
-    for (const notification of samples) {
-      await storage.saveNotification(notification);
-    }
   }
 }
 

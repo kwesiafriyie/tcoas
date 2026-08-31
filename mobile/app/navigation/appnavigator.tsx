@@ -2,6 +2,7 @@
 
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import React from 'react';
 import { DetailScreen } from '../screens/DetailsScreen';
@@ -89,6 +90,7 @@ const MainTabs = () => {
 
 export const AppNavigator = () => {
   return (
+    <NavigationContainer>
       <Stack.Navigator
         screenOptions={{
           headerStyle: {
@@ -100,7 +102,6 @@ export const AppNavigator = () => {
           },
         }}
       >
-
         <Stack.Screen
           name="MainTabs"
           component={MainTabs}
@@ -117,7 +118,7 @@ export const AppNavigator = () => {
 
         <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ title: 'Notifications' }} />
         <Stack.Screen name="NotificationSettings" component={NotificationSettingsScreen} options={{ title: 'Notification Settings' }} />
-      
       </Stack.Navigator>
+    </NavigationContainer>
   );
 };

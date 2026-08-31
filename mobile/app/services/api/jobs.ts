@@ -1,117 +1,35 @@
-// // src/services/api/jobs.ts
-
-// import { JobsQueryParams, Opportunity, PaginatedResponse } from '../../types';
-// import { API_CONFIG } from '../../utils/constants';
-// import apiClient from './client';
-// import { mockApi } from './mock.ts.bak';
-
-// export const jobsApi = {
-//   async getJobs(params: JobsQueryParams = {}): Promise<PaginatedResponse<Opportunity>> {
-//     if (API_CONFIG.MOCK_MODE) {
-//       return mockApi.getJobs(params);
-//     }
-
-//     const response = await apiClient.get<PaginatedResponse<Opportunity>>('/opportunities', { params });
-//     return response.data;
-//   },
-
-//   async getJobById(id: number): Promise<Opportunity> {
-//     if (API_CONFIG.MOCK_MODE) {
-//       const job = await mockApi.getJobById(id);
-//       if (!job) throw new Error('Job not found');
-//       return job;
-//     }
-
-//     const response = await apiClient.get<Opportunity>(`/jobs/${id}`);
-//     return response.data;
-//   },
-
-//   async getCriticalJobs(): Promise<PaginatedResponse<Opportunity>> {
-//     return this.getJobs({
-//       status: 'Critical',
-//       sort_by: 'deadline_asc',
-//       limit: 20,
-//     });
-//   },
-
-//   async searchJobs(query: string): Promise<PaginatedResponse<Opportunity>> {
-//     return this.getJobs({
-//       search: query,
-//       limit: 20,
-//     });
-//   },
-// };
-
-
-
-
-
-
-
-
-
-
-// src/services/api/jobs.ts
-
-import { JobsQueryParams, Opportunity, PaginatedResponse } from '../../types';
-import { API_CONFIG } from '../../utils/constants';
+import { Opportunity, OpportunityFilters, OpportunityList, OpportunityQueryParams } from '../../types';
 import apiClient from './client';
-// Import only if you actually need the backup logic, otherwise you can remove this
-// import { mockApi } from './mock.ts.bak'; 
 
 export const jobsApi = {
-  async getJobs(params: JobsQueryParams = {}): Promise<PaginatedResponse<Opportunity>> {
-    // 1. Check if we are in mock mode (Optional: you can remove this if you're fully on DB now)
-    if (API_CONFIG.MOCK_MODE) {
-       // Since you renamed it to .bak, this might fail unless you fix the import.
-       // For now, let's assume we want to hit the real DB.
-    }
-
-    // 2. Fetch raw array from FastAPI. 
-    // IMPORTANT: Note the trailing slash '/' to match your backend logs and avoid 307 redirects.
-    const response = await apiClient.get<Opportunity[]>('/opportunities/');
-    
-
-    // 3. TRANSFORM the raw array into the object format HomeScreen expects
-    // This turns [{}, {}] into { items: [{}, {}], total: 2, ... }
-    const rawData = response.data;
-    
+  // The backend enforces open-only and does the actual filtering/sorting --
+  // this just forwards whatever params the caller sets, unchanged, so
+  // there's exactly one place (the API) that decides what "open" and
+  // "matches these filters" mean.
+  async getJobs(params: OpportunityQueryParams = {}): Promise<OpportunityList> {
+    const response = await apiClient.get<Opportunity[]>('/api/opportunities/', { params });
+    const totalHeader = response.headers['x-total-count'];
     return {
-      items: Array.isArray(rawData) ? rawData : [], // Map the array to 'items'
-      total: rawData.length || 0,
-      page: 1,
-      size: rawData.length || 0,
-      pages: 1
+      items: response.data,
+      total: totalHeader ? parseInt(totalHeader, 10) : response.data.length,
     };
   },
 
-  // async getJobById(id: number): Promise<Opportunity> {
-  //   // Ensure trailing slash here too
-  //   const response = await apiClient.get<Opportunity>(`/opportunities/${id}/`);
-  //   return response.data;
-  // },
-
   async getJobById(id: number): Promise<Opportunity> {
-    // FIX: Change '/jobs/' to '/opportunities/' to match your backend
-    // Also adding the trailing slash to match FastAPI patterns
-    const response = await apiClient.get<Opportunity>(`/opportunities/${id}`);
-    
-    console.log('Detail Data Received:', response.data);
+    const response = await apiClient.get<Opportunity>(`/api/opportunities/${id}`);
     return response.data;
   },
 
-  async getCriticalJobs(): Promise<PaginatedResponse<Opportunity>> {
-    // Re-uses the getJobs logic above
-    return this.getJobs({
-      status: 'Urgent', 
-      limit: 20,
-    });
+  // Distinct filter values + counts across currently-open opportunities --
+  // drives the filter UI so it never offers a source/country/type/sector
+  // that has nothing open behind it, and never goes stale against a
+  // hardcoded list.
+  async getFilters(): Promise<OpportunityFilters> {
+    const response = await apiClient.get<OpportunityFilters>('/api/opportunities/filters');
+    return response.data;
   },
 
-  async searchJobs(query: string): Promise<PaginatedResponse<Opportunity>> {
-    return this.getJobs({
-      search: query,
-      limit: 20,
-    });
+  async searchJobs(query: string): Promise<OpportunityList> {
+    return this.getJobs({ search: query, limit: 50 });
   },
 };

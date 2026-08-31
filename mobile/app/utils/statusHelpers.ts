@@ -1,107 +1,35 @@
-// src/utils/statusHelpers.ts
-
-import { OpportunityStatus } from '../types';
-import { COLORS, DEADLINE_THRESHOLDS } from './constants';
+import { UrgencyLevel } from '../types';
+import { DEADLINE_THRESHOLDS } from './constants';
 import { getDaysUntilDeadline } from './dateHelpers';
 
-// export const calculateStatus = (deadlineString: string): OpportunityStatus => {
-//   const daysLeft = getDaysUntilDeadline(deadlineString);
-  
-//   if (daysLeft < 0) return 'Active';
-//   if (daysLeft <= DEADLINE_THRESHOLDS.CRITICAL_DAYS) return 'Critical';
-//   if (daysLeft <= DEADLINE_THRESHOLDS.URGENT_DAYS) return 'Urgent';
-  
-//   return 'Active';
-// };
+// Presentation-only: how urgently a deadline should read on screen. This is
+// never a substitute for the backend's open/expired determination --
+// /api/opportunities/ already only ever returns open opportunities, so
+// there is deliberately no "expired" case here for the live feed. A saved
+// opportunity whose deadline has since passed is handled by the Saved
+// screen dropping it (see useSavedJobs usage in SavedScreen), the same way
+// an expired opportunity never appears anywhere else in the app.
+export const getUrgencyLevel = (deadline?: string | null): UrgencyLevel => {
+  const daysLeft = getDaysUntilDeadline(deadline);
 
-
-export const calculateStatus = (deadlineString: string): OpportunityStatus => {
-  const daysLeft = getDaysUntilDeadline(deadlineString);
-  
-  if (daysLeft < 0) return 'Expired';
-  if (daysLeft === 0) return 'ClosingToday';  // NEW
-  if (daysLeft <= DEADLINE_THRESHOLDS.URGENT_DAYS) return 'Urgent';  // Now 5 days
-  
-  return 'Active';
+  if (daysLeft === null) return 'active'; // no deadline -- never urgent
+  if (daysLeft <= 0) return 'closing_today';
+  if (daysLeft <= DEADLINE_THRESHOLDS.URGENT_DAYS) return 'urgent';
+  return 'active';
 };
 
-// export const getStatusColor = (status: OpportunityStatus): string => {
-//   switch (status) {
-//     // case 'Critical':
-//     //   return COLORS.critical;
-//     case 'Urgent':
-//       return COLORS.urgent;
-//     case 'Active':
-//       return COLORS.active;
-//     default:
-//       return COLORS.text;
-//   }
-// };
-
-
-// REPLACE getStatusColor with this:
-export const getStatusColor = (status: OpportunityStatus): string => {
-  switch (status) {
-    case 'ClosingToday':  // NEW
-      return COLORS.closingToday;
-    case 'Urgent':
-      return COLORS.urgent;
-    case 'Active':
-      return COLORS.active;
-    case 'Expired':  // NEW
-      return COLORS.textSecondary;
-    default:
-      return COLORS.text;
-  }
-};
-
-
-
-
-export const getStatusIcon = (status: OpportunityStatus): string => {
-  switch (status) {
-    // case 'Critical':
-    //   return 'alert-circle';
-    case 'Urgent':
-      return 'clock-alert';
-    case 'Active':
-      return 'check-circle';
-    default:
-      return 'information';
-  }
-};
-
-export const sortByDeadlineUrgency = <T extends { deadline: string }>(
+// No-deadline opportunities sort last -- they carry no time pressure, so
+// they shouldn't crowd out genuinely urgent ones at the top of a
+// soonest-first list.
+export const sortByDeadlineUrgency = <T extends { deadline?: string | null }>(
   opportunities: T[]
 ): T[] => {
   return [...opportunities].sort((a, b) => {
     const daysA = getDaysUntilDeadline(a.deadline);
     const daysB = getDaysUntilDeadline(b.deadline);
+    if (daysA === null && daysB === null) return 0;
+    if (daysA === null) return 1;
+    if (daysB === null) return -1;
     return daysA - daysB;
   });
-};
-
-
-
-// ADD THESE at the end of your existing statusHelpers.ts
-
-// NEW: Display text for statuses
-export const getStatusDisplayText = (status: OpportunityStatus): string => {
-  switch (status) {
-    case 'ClosingToday':
-      return 'Closing Today';
-    case 'Urgent':
-      return 'Urgent';
-    case 'Active':
-      return 'Active';
-    case 'Expired':
-      return 'Expired';
-    default:
-      return status;
-  }
-};
-
-// NEW: Helper to check if opportunity should be shown
-export const shouldShowOpportunity = (deadlineString: string): boolean => {
-  return getDaysUntilDeadline(deadlineString) >= 0; // Don't show expired
 };

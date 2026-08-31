@@ -1,8 +1,7 @@
-// src/utils/dateHelpers.ts
-
 import { differenceInDays, format, formatDistanceToNow, isValid, parseISO } from 'date-fns';
 
-export const formatDate = (dateString: string): string => {
+export const formatDate = (dateString?: string | null): string => {
+  if (!dateString) return 'Not specified';
   try {
     const date = parseISO(dateString);
     if (!isValid(date)) return 'Invalid date';
@@ -22,27 +21,29 @@ export const formatRelativeTime = (dateString: string): string => {
   }
 };
 
-export const getDaysUntilDeadline = (deadlineString: string): number => {
+// null/undefined means "no deadline" -- per the backend, that means the
+// opportunity is always open, not that it's overdue. Returning null (not
+// -1) here is what lets callers tell "no deadline" apart from "deadline
+// already passed" instead of conflating them.
+export const getDaysUntilDeadline = (deadlineString?: string | null): number | null => {
+  if (!deadlineString) return null;
   try {
     const deadline = parseISO(deadlineString);
-    if (!isValid(deadline)) return -1;
+    if (!isValid(deadline)) return null;
     return differenceInDays(deadline, new Date());
   } catch {
-    return -1;
+    return null;
   }
 };
 
-export const isDeadlinePassed = (deadlineString: string): boolean => {
-  return getDaysUntilDeadline(deadlineString) < 0;
-};
-
-export const getDeadlineText = (deadlineString: string): string => {
+export const getDeadlineText = (deadlineString?: string | null): string => {
   const days = getDaysUntilDeadline(deadlineString);
-  
+
+  if (days === null) return 'No deadline';
   if (days < 0) return 'Expired';
   if (days === 0) return 'Today';
   if (days === 1) return 'Tomorrow';
-  if (days <= 7) return `${days} days left`;
-  
+  if (days <= 10) return `${days} days left`;
+
   return formatDate(deadlineString);
 };

@@ -1,47 +1,53 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import React, { useState } from 'react';
-import { FlatList, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { FilterSheet, StagedFilters } from '../components/FilterSheet';
 import { EmptyState, LoadingScreen } from '../components/EmptyState';
 import { OpportunityCard } from '../components/OpportunityCard';
-import { useJobs } from '../hooks/useJobs';
-import { JobsQueryParams, RootStackParamList } from '../types';
-import { COLORS, SOURCES, STATUS_OPTIONS } from '../utils/constants';
+import { useDebouncedValue } from '../hooks/useDebouncedValue';
+import { useFilters, useJobs } from '../hooks/useJobs';
+import { OpportunityQueryParams, RootStackParamList } from '../types';
+import { COLORS } from '../utils/constants';
 
 type SearchScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'MainTabs'>;
 
+const EMPTY_FILTERS: StagedFilters = {};
+
+// Bottom-sheet filter pattern instead of a permanently-visible desktop-style
+// filter bar (see FilterSheet) -- filters and sort live behind one "Filters"
+// button, staged and applied together rather than triggering a request per
+// tap. Country/type/sector/source options are driven live from
+// GET /api/opportunities/filters, never a hardcoded list.
 export const SearchScreen: React.FC = () => {
   const navigation = useNavigation<SearchScreenNavigationProp>();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedSources, setSelectedSources] = useState<string[]>([]);
-  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
-  const [showFilters, setShowFilters] = useState(false);
+  const [searchInput, setSearchInput] = useState('');
+  const [appliedFilters, setAppliedFilters] = useState<StagedFilters>(EMPTY_FILTERS);
+  const [sheetVisible, setSheetVisible] = useState(false);
 
-  const params: JobsQueryParams = {
-    search: searchQuery || undefined,
-    source: selectedSources.length > 0 ? selectedSources.join(',') : undefined,
-    status: selectedStatuses.length > 0 ? selectedStatuses.join(',') : undefined,
+  const search = useDebouncedValue(searchInput);
+  const { data: filters } = useFilters();
+
+  const params: OpportunityQueryParams = {
+    ...appliedFilters,
+    search: search || undefined,
     limit: 50,
   };
 
   const { data, isLoading, isError } = useJobs(params);
 
-  const toggleSource = (source: string) => {
-    setSelectedSources(prev => prev.includes(source) ? prev.filter(s => s !== source) : [...prev, source]);
-  };
+  const activeFilterCount = useMemo(
+    () => Object.values(appliedFilters).filter((v) => v !== undefined).length,
+    [appliedFilters]
+  );
+  const hasActiveFilters = activeFilterCount > 0;
+  const hasAnyActiveState = hasActiveFilters || !!searchInput;
 
-  const toggleStatus = (status: string) => {
-    setSelectedStatuses(prev => prev.includes(status) ? prev.filter(s => s !== status) : [...prev, status]);
+  const clearAll = () => {
+    setSearchInput('');
+    setAppliedFilters(EMPTY_FILTERS);
   };
-
-  const clearFilters = () => {
-    setSearchQuery('');
-    setSelectedSources([]);
-    setSelectedStatuses([]);
-  };
-
-  const hasActiveFilters = searchQuery || selectedSources.length > 0 || selectedStatuses.length > 0;
 
   if (isError) {
     return (
@@ -62,68 +68,34 @@ export const SearchScreen: React.FC = () => {
             style={styles.searchInput}
             placeholder="Search opportunities..."
             placeholderTextColor={COLORS.textSecondary}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
+            value={searchInput}
+            onChangeText={setSearchInput}
           />
-          {searchQuery ? (
-            <TouchableOpacity onPress={() => setSearchQuery('')}>
+          {searchInput ? (
+            <TouchableOpacity onPress={() => setSearchInput('')}>
               <MaterialCommunityIcons name="close-circle" size={20} color={COLORS.textSecondary} />
             </TouchableOpacity>
           ) : null}
         </View>
 
         <View style={styles.filterHeader}>
-          <TouchableOpacity style={styles.filterButton} onPress={() => setShowFilters(!showFilters)}>
+          <TouchableOpacity style={styles.filterButton} onPress={() => setSheetVisible(true)}>
             <MaterialCommunityIcons name="filter-variant" size={20} color={COLORS.primary} />
             <Text style={styles.filterButtonText}>Filters</Text>
-            {hasActiveFilters && <View style={styles.filterIndicator} />}
+            {hasActiveFilters && (
+              <View style={styles.filterCountBadge}>
+                <Text style={styles.filterCountText}>{activeFilterCount}</Text>
+              </View>
+            )}
           </TouchableOpacity>
 
-          {hasActiveFilters && (
-            <TouchableOpacity onPress={clearFilters}>
+          {hasAnyActiveState && (
+            <TouchableOpacity onPress={clearAll}>
               <Text style={styles.clearText}>Clear All</Text>
             </TouchableOpacity>
           )}
         </View>
       </View>
-
-      {showFilters && (
-        <ScrollView style={styles.filtersPanel} horizontal={false}>
-          <View style={styles.filterGroup}>
-            <Text style={styles.filterGroupTitle}>Source</Text>
-            <View style={styles.chipContainer}>
-              {SOURCES.map(source => (
-                <TouchableOpacity
-                  key={source.value}
-                  style={[styles.chip, selectedSources.includes(source.value) && styles.chipSelected]}
-                  onPress={() => toggleSource(source.value)}
-                >
-                  <Text style={[styles.chipText, selectedSources.includes(source.value) && styles.chipTextSelected]}>
-                    {source.label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-
-          <View style={styles.filterGroup}>
-            <Text style={styles.filterGroupTitle}>Status</Text>
-            <View style={styles.chipContainer}>
-              {STATUS_OPTIONS.map(status => (
-                <TouchableOpacity
-                  key={status.value}
-                  style={[styles.chip, selectedStatuses.includes(status.value) && styles.chipSelected]}
-                  onPress={() => toggleStatus(status.value)}
-                >
-                  <Text style={[styles.chipText, selectedStatuses.includes(status.value) && styles.chipTextSelected]}>
-                    {status.label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-        </ScrollView>
-      )}
 
       {isLoading ? (
         <LoadingScreen />
@@ -140,7 +112,7 @@ export const SearchScreen: React.FC = () => {
           contentContainerStyle={opportunities.length === 0 ? styles.emptyList : styles.list}
           ListEmptyComponent={
             <EmptyState
-              message={hasActiveFilters ? 'No opportunities match your filters' : 'Start searching for opportunities'}
+              message={hasAnyActiveState ? 'No opportunities match your filters' : 'Start searching for opportunities'}
               icon="magnify"
             />
           }
@@ -149,6 +121,14 @@ export const SearchScreen: React.FC = () => {
           }
         />
       )}
+
+      <FilterSheet
+        visible={sheetVisible}
+        onDismiss={() => setSheetVisible(false)}
+        onApply={setAppliedFilters}
+        current={appliedFilters}
+        filters={filters}
+      />
     </View>
   );
 };
@@ -161,16 +141,18 @@ const styles = StyleSheet.create({
   filterHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   filterButton: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8 },
   filterButtonText: { marginLeft: 6, fontSize: 14, fontWeight: '600', color: COLORS.primary },
-  filterIndicator: { width: 8, height: 8, borderRadius: 4, backgroundColor: COLORS.error, marginLeft: 6 },
+  filterCountBadge: {
+    marginLeft: 6,
+    backgroundColor: COLORS.primary,
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 5,
+  },
+  filterCountText: { color: '#FFFFFF', fontSize: 11, fontWeight: '700' },
   clearText: { fontSize: 14, color: COLORS.primary, fontWeight: '600' },
-  filtersPanel: { backgroundColor: COLORS.surface, paddingHorizontal: 16, paddingBottom: 16, maxHeight: 200 },
-  filterGroup: { marginBottom: 16 },
-  filterGroupTitle: { fontSize: 14, fontWeight: '600', color: COLORS.text, marginBottom: 8 },
-  chipContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: COLORS.background, borderWidth: 1, borderColor: COLORS.border },
-  chipSelected: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
-  chipText: { fontSize: 13, color: COLORS.text, fontWeight: '500' },
-  chipTextSelected: { color: '#FFFFFF' },
   list: { paddingTop: 8, paddingBottom: 16 },
   emptyList: { flex: 1 },
   resultsText: { fontSize: 14, color: COLORS.textSecondary, marginHorizontal: 16, marginTop: 12, marginBottom: 4 },
