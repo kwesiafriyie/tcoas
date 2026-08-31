@@ -48,6 +48,40 @@ npm run generate:types
 By default this reads from `http://localhost:8000/openapi.json`; set
 `EXPO_PUBLIC_API_URL` to point it at a different backend first.
 
+## Internal test builds (no App Store / Play Store)
+
+`eas.json` defines three [EAS Build](https://docs.expo.dev/build/introduction/)
+profiles for distributing installable builds directly, without any store
+listing or review:
+
+- `development` -- a dev client for local iteration.
+- `preview` -- internal distribution: a plain installable `.apk` on
+  Android, and an ad-hoc-signed `.ipa` on iOS. Each produces a link/QR
+  code from `expo.dev` that a tester opens on their phone to install the
+  app directly.
+- `production` -- for eventual store submission.
+
+One-time setup (requires your own Expo account):
+
+```bash
+npm install -g eas-cli
+eas login
+eas init          # links this project to your Expo account, sets extra.eas.projectId
+```
+
+Then, to cut a build for testers:
+
+```bash
+eas build --profile preview --platform android   # no account cost, installs anywhere
+eas build --profile preview --platform ios       # requires a paid Apple Developer account;
+                                                   # register each tester's device first:
+                                                   #   eas device:create
+```
+
+`ios.bundleIdentifier` and `android.package` are currently set to the
+placeholder `com.tcoas.mobile` -- change both to your own reverse-DNS
+identifier before distributing real builds or ever submitting to a store.
+
 ## Project structure
 
 ```
