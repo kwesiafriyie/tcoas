@@ -61,6 +61,15 @@ listing or review:
   app directly.
 - `production` -- for eventual store submission.
 
+`preview` and `production` both bake in `EXPO_PUBLIC_API_URL` pointing at
+the deployed backend (`consulting-opportunities-api.onrender.com`) via
+each profile's `env` block in `eas.json` -- unlike `npx expo start`, an
+EAS Build runs on Expo's servers and never sees your local shell's env
+vars, so without this every internal test build would silently fall back
+to the dev-only `localhost`/`10.0.2.2` default and fail with a network
+error on every request. Override per-build with `--profile` flags or
+`eas.json` if you ever need a build pointed at a different backend.
+
 One-time setup (requires your own Expo account):
 
 ```bash
