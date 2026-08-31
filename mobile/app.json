@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "mobile",
+    "name": "TCOAS",
     "slug": "mobile",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -43,6 +43,12 @@
     ],
     "experiments": {
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "acc66005-94f1-40cf-bbfa-06875cf7076b"
+      }
+    },
+    "owner": "ericafriyie"
   }
 }
