@@ -70,6 +70,11 @@ to the dev-only `localhost`/`10.0.2.2` default and fail with a network
 error on every request. Override per-build with `--profile` flags or
 `eas.json` if you ever need a build pointed at a different backend.
 
+Same reasoning applies to `EXPO_PUBLIC_KPMG_FIT_UI_ENABLED` -- also baked
+into both profiles' `env` blocks. Any new `EXPO_PUBLIC_*` flag needs to go
+here too, or it silently stays off in every internal build even if it
+works fine under `npx expo start`.
+
 One-time setup (requires your own Expo account):
 
 ```bash
