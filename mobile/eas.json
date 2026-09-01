@@ -13,13 +13,15 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://consulting-opportunities-api.onrender.com"
+        "EXPO_PUBLIC_API_URL": "https://consulting-opportunities-api.onrender.com",
+        "EXPO_PUBLIC_KPMG_FIT_UI_ENABLED": "true"
       }
     },
     "production": {
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://consulting-opportunities-api.onrender.com"
+        "EXPO_PUBLIC_API_URL": "https://consulting-opportunities-api.onrender.com",
+        "EXPO_PUBLIC_KPMG_FIT_UI_ENABLED": "true"
       }
     }
   },
